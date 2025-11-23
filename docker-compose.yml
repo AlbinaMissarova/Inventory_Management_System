@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: name
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - "5432"
+    restart: always
+    #  Проверка готовности базы данных PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s # Даем 10 секунд на первичную инициализацию
+
+  web:
+    build: .
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      # Передаем переменные окружения
+      DB_HOST: db 
+      DB_PORT: 5432
+      DB_USER: user
+      DB_PASS: pass
+      DB_NAME: name
+    #ОБНОВЛЕНИЕ: Ждем, пока сервис 'db' будет не просто "запущен" (depends_on), 
+    # а станет "здоровым" (ready)
+    depends_on:
+      db:
+        condition: service_healthy 
+    restart: always
+
+volumes:
+  postgres_data:

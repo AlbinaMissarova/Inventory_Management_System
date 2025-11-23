@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система управления складскими остатками</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .error-message {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .success-message {
+            color: #198754;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <h1 class="text-center mb-4">Система управления складскими остатками</h1>
+        
+        <ul class="nav nav-tabs mb-4" id="mainTabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="#nomenclature" data-bs-toggle="tab">Номенклатура</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#suppliers" data-bs-toggle="tab">Поставщики</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#storages" data-bs-toggle="tab">Склады</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#leftovers" data-bs-toggle="tab">Остатки на складах</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#products-suppliers" data-bs-toggle="tab">Товары и поставщики</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#operations" data-bs-toggle="tab">Операции</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="nomenclature">
+                <div class="d-flex justify-content-between mb-3">
+                    <h3>Номенклатура товаров</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                        Добавить товар
+                    </button>
+                </div>
+                
+                <div class="card p-3 mb-3">
+                    <h5>Фильтр по поставщику</h5>
+                    <div class="d-flex align-items-center">
+                        <select class="form-select w-auto me-3" id="supplierFilterSelect">
+                            <option value="all">Показать все товары</option>
+                            </select>
+                        <button class="btn btn-secondary" onclick="document.getElementById('supplierFilterSelect').value = 'all'; loadProducts()">Сбросить</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="table table-striped" id="productsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Артикул</th>
+                                <th>Название</th>
+                                <th>Описание</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="suppliers">
+                <div class="d-flex justify-content-between mb-3">
+                    <h3>Поставщики</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+                        Добавить поставщика
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="table table-striped" id="suppliersTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Email</th>
+                                <th>Телефон</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suppliersTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="storages">
+                <div class="d-flex justify-content-between mb-3">
+                    <h3>Склады</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStorageModal">
+                        Добавить склад
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="table table-striped" id="storagesTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Адрес</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="storagesTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="leftovers">
+                <div class="d-flex justify-content-between mb-3">
+                    <h3>Остатки на складах</h3>
+                    <div>
+                        <label for="deficitFilter" class="form-label d-inline-block me-2 mb-0">Показать дефицит (меньше N):</label>
+                        <input type="number" id="deficitFilter" class="form-control d-inline-block w-auto" placeholder="Введите N">
+                        <button class="btn btn-warning" onclick="loadLeftovers()">Применить фильтр</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="table table-striped" id="leftoversTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Артикул</th>
+                                <th>Название товара</th>
+                                <th>Склад</th>
+                                <th>Остаток</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leftoversTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="products-suppliers">
+                <h3>Товары и поставщики</h3>
+                <div class="table-container">
+                    <table class="table table-striped" id="productsSuppliersTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Название товара</th>
+                                <th>Поставщик</th>
+                                <th>Email</th>
+                                <th>Телефон</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsSuppliersTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="operations">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Добавить поставку (Связь Товар-Поставщик)</h4>
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <form id="addSupplyForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Товар</label>
+                                        <select class="form-select" id="supplyProduct" required>
+                                            <option value="">Выберите товар</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Поставщик</label>
+                                        <select class="form-select" id="supplySupplier" required>
+                                            <option value="">Выберите поставщика</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">Добавить поставку</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Добавить закупку (Поступление на Склад)</h4>
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <form id="addPurchaseForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Товар</label>
+                                        <select class="form-select" id="purchaseProduct" required>
+                                            <option value="">Выберите товар</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Склад</label>
+                                        <select class="form-select" id="purchaseStorage" required>
+                                            <option value="">Выберите склад</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Количество</label>
+                                        <input type="number" class="form-control" id="purchaseQuantity" min="1" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">Добавить закупку</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addProductModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Добавить товар</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="addProductForm"><div class="modal-body"><div class="mb-3"><label class="form-label">Название товара</label><input type="text" class="form-control" id="productName" required></div><div class="mb-3"><label class="form-label">Описание</label><textarea class="form-control" id="productDescription"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary">Добавить</button></div></form></div></div></div>
+    <div class="modal fade" id="addSupplierModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Добавить поставщика</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="addSupplierForm"><div class="modal-body"><div class="mb-3"><label class="form-label">Название поставщика</label><input type="text" class="form-control" id="supplierName" required></div><div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" id="supplierEmail"></div><div class="mb-3"><label class="form-label">Телефон</label><input type="tel" class="form-control" id="supplierPhone" pattern="\+7\(\d{3}\)\d{3}-\d{2}-\d{2}" placeholder="+7(XXX)XXX-XX-XX" required><div class="form-text">Формат: +7(XXX)XXX-XX-XX</div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary">Добавить</button></div></form></div></div></div>
+    <div class="modal fade" id="addStorageModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Добавить склад</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="addStorageForm"><div class="modal-body"><div class="mb-3"><label class="form-label">Название склада</label><input type="text" class="form-control" id="storageName" required></div><div class="mb-3"><label class="form-label">Адрес</label><textarea class="form-control" id="storageAddress"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary">Добавить</button></div></form></div></div></div>
+
+    <div class="modal fade" id="editProductModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Изменить товар</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="editProductForm"><input type="hidden" id="editProductId"><div class="modal-body"><div class="mb-3"><label class="form-label">Артикул</label><input type="text" class="form-control" id="editProductArticle" disabled></div><div class="mb-3"><label class="form-label">Название товара</label><input type="text" class="form-control" id="editProductName" required></div><div class="mb-3"><label class="form-label">Описание</label><textarea class="form-control" id="editProductDescription"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary">Сохранить</button></div></form></div></div></div>
+    <div class="modal fade" id="editSupplierModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Изменить поставщика</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="editSupplierForm"><input type="hidden" id="editSupplierId"><div class="modal-body"><div class="mb-3"><label class="form-label">ID</label><input type="text" class="form-control" id="editSupplierDisplayId" disabled></div><div class="mb-3"><label class="form-label">Название поставщика</label><input type="text" class="form-control" id="editSupplierName" required></div><div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" id="editSupplierEmail"></div><div class="mb-3"><label class="form-label">Телефон</label><input type="tel" class="form-control" id="editSupplierPhone" pattern="\+7\(\d{3}\)\d{3}-\d{2}-\d{2}" placeholder="+7(XXX)XXX-XX-XX" required><div class="form-text">Формат: +7(XXX)XXX-XX-XX</div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary">Сохранить</button></div></form></div></div></div>
+    <div class="modal fade" id="editStorageModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Изменить склад</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="editStorageForm"><input type="hidden" id="editStorageId"><div class="modal-body"><div class="mb-3"><label class="form-label">ID</label><input type="text" class="form-control" id="editStorageDisplayId" disabled></div><div class="mb-3"><label class="form-label">Название склада</label><input type="text" class="form-control" id="editStorageName" required></div><div class="mb-3"><label class="form-label">Адрес</label><textarea class="form-control" id="editStorageAddress"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary">Сохранить</button></div></form></div></div></div>
+
+    <div class="modal fade" id="editLeftoverModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменить остаток на складе</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editLeftoverForm">
+                    <input type="hidden" id="editLeftoverProductId">
+                    <input type="hidden" id="editLeftoverStorageId">
+                    <div class="modal-body">
+                        <p>Товар: <strong id="leftoverProductName"></strong></p>
+                        <p>Склад: <strong id="leftoverStorageName"></strong></p>
+                        <div class="mb-3">
+                            <label class="form-label">Новый остаток</label>
+                            <input type="number" class="form-control" id="editLeftoverQuantity" min="0" required>
+                            <div class="form-text">Введите новое фактическое количество товара на складе.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="messageArea" class="position-fixed top-0 end-0 p-3" style="z-index: 11"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Базовый URL API - замените на ваш реальный URL
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Глобальные переменные для хранения данных
+        let allProducts = []; // Хранит полный список товаров
+        let suppliers = [];
+        let storages = [];
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            setupEventListeners();
+        });
+
+        // Загрузка всех данных
+        async function loadAllData() {
+            try {
+                await Promise.all([
+                    loadProducts(), // Загружает все товары в allProducts и рендерит
+                    loadSuppliers(),
+                    loadStorages(),
+                    loadProductsWithSuppliers()
+                ]);
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка загрузки данных: ' + error.message, 'error');
+            }
+        }
+
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            // Формы добавления
+            document.getElementById('addProductForm').addEventListener('submit', addProduct);
+            document.getElementById('addSupplierForm').addEventListener('submit', addSupplier);
+            document.getElementById('addStorageForm').addEventListener('submit', addStorage);
+            document.getElementById('addSupplyForm').addEventListener('submit', addSupply);
+            document.getElementById('addPurchaseForm').addEventListener('submit', addPurchase);
+            
+            // Формы изменения
+            document.getElementById('editProductForm').addEventListener('submit', editProduct);
+            document.getElementById('editSupplierForm').addEventListener('submit', editSupplier);
+            document.getElementById('editStorageForm').addEventListener('submit', editStorage);
+            document.getElementById('editLeftoverForm').addEventListener('submit', editLeftover); 
+
+            // Обработчик фильтрации по поставщику
+            document.getElementById('supplierFilterSelect').addEventListener('change', function() {
+                const supplierId = this.value;
+                if (supplierId === 'all') {
+                    renderProductsTable(allProducts); // Показать все товары
+                } else {
+                    loadProductsBySupplier(parseInt(supplierId)); // Загрузить товары по ID
+                }
+            });
+
+            // При переключении вкладок загружаем соответствующие данные
+            document.querySelectorAll('#mainTabs a').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(event) {
+                    const target = event.target.getAttribute('href');
+                    if (target === '#leftovers') {
+                        loadLeftovers();
+                    } else if (target === '#nomenclature') {
+                         renderProductsTable(allProducts); // При возвращении на вкладку, показываем все
+                         document.getElementById('supplierFilterSelect').value = 'all'; // Сброс фильтра
+                    }
+                });
+            });
+        }
+
+        /* --- API ФУНКЦИИ --- */
+
+        // Загрузка всех товаров
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/product`);
+                if (!response.ok) throw new Error('Ошибка загрузки товаров');
+                allProducts = await response.json();
+                renderProductsTable(allProducts);
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        // Загрузка товаров по поставщику
+        async function loadProductsBySupplier(supplierId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/supplier/supplied_products?supplier_id=${supplierId}`);
+                if (!response.ok) throw new Error('Ошибка фильтрации товаров');
+                const filteredProducts = await response.json();
+                renderProductsTable(filteredProducts);
+            } catch (error) {
+                showMessage('Ошибка загрузки товаров по поставщику: ' + error.message, 'error');
+            }
+        }
+
+        // Загрузка поставщиков
+        async function loadSuppliers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/supplier`);
+                if (!response.ok) throw new Error('Ошибка загрузки поставщиков');
+                suppliers = await response.json();
+                renderSuppliersTable();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Загрузка складов
+        async function loadStorages() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/storage`);
+                if (!response.ok) throw new Error('Ошибка загрузки складов');
+                storages = await response.json();
+                renderStoragesTable();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Загрузка остатков
+        async function loadLeftovers() {
+            try {
+                const deficitValue = document.getElementById('deficitFilter').value;
+                let url = `${API_BASE_URL}/storage/leftovers`;
+                
+                // Проверяем, если число введено и оно не 0 или пустая строка (так как бэкенд ожидает ge=1)
+                if (deficitValue && !isNaN(parseInt(deficitValue)) && parseInt(deficitValue) >= 1) {
+                    url += `?num=${parseInt(deficitValue)}`;
+                } else if (deficitValue && parseInt(deficitValue) <= 0) {
+                     showMessage('Значение для фильтра дефицита должно быть больше или равно 1.', 'error');
+                     return;
+                }
+                // Если поле пустое или NaN, отправляем запрос без параметра (num=None на бэкенде)
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Ошибка загрузки остатков');
+                const leftovers = await response.json();
+                renderLeftoversTable(leftovers);
+            } catch (error) {
+                showMessage('Ошибка загрузки остатков: ' + error.message, 'error');
+            }
+        }
+
+        // Загрузка товаров и поставщиков
+        async function loadProductsWithSuppliers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/supplier/with_products`);
+                if (!response.ok) throw new Error('Ошибка загрузки данных');
+                const data = await response.json();
+                renderProductsSuppliersTable(data);
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        /* --- CRUD ОПЕРАЦИИ (ДОБАВЛЕНИЕ) --- */
+
+        // Добавление товара
+        async function addProduct(event) {
+            event.preventDefault();
+            
+            const productData = {
+                product_name: document.getElementById('productName').value,
+                product_description: document.getElementById('productDescription').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/product`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(productData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка добавления товара');
+                
+                showMessage('Товар успешно добавлен!', 'success');
+                document.getElementById('addProductForm').reset();
+                bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
+                
+                await loadProducts(); // Обновляем allProducts и рендерим
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка добавления товара: ' + error.message, 'error');
+            }
+        }
+
+        // Добавление поставщика
+        async function addSupplier(event) {
+            event.preventDefault();
+            
+            const supplierData = {
+                supplier_name: document.getElementById('supplierName').value,
+                email: document.getElementById('supplierEmail').value || null,
+                phone: document.getElementById('supplierPhone').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/supplier`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(supplierData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка добавления поставщика');
+                
+                showMessage('Поставщик успешно добавлен!', 'success');
+                document.getElementById('addSupplierForm').reset();
+                bootstrap.Modal.getInstance(document.getElementById('addSupplierModal')).hide();
+                
+                await loadSuppliers();
+                await loadProductsWithSuppliers();
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка добавления поставщика: ' + error.message, 'error');
+            }
+        }
+        
+        // Добавление склада
+        async function addStorage(event) {
+            event.preventDefault();
+            
+            const storageData = {
+                storage_name: document.getElementById('storageName').value,
+                address: document.getElementById('storageAddress').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/storage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(storageData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка добавления склада');
+                
+                showMessage('Склад успешно добавлен!', 'success');
+                document.getElementById('addStorageForm').reset();
+                bootstrap.Modal.getInstance(document.getElementById('addStorageModal')).hide();
+                
+                await loadStorages();
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка добавления склада: ' + error.message, 'error');
+            }
+        }
+
+
+        /* --- CRUD ОПЕРАЦИИ (ИЗМЕНЕНИЕ) --- */
+
+        // Предзаполнение модального окна для изменения товара
+        function openEditProductModal(productId) {
+            const product = allProducts.find(p => p.product_id === productId);
+            if (!product) return showMessage('Товар не найден.', 'error');
+
+            document.getElementById('editProductId').value = product.product_id;
+            document.getElementById('editProductArticle').value = product.product_id;
+            document.getElementById('editProductName').value = product.product_name;
+            document.getElementById('editProductDescription').value = product.product_description || '';
+
+            const editModal = new bootstrap.Modal(document.getElementById('editProductModal'));
+            editModal.show();
+        }
+
+        // Изменение товара
+        async function editProduct(event) {
+            event.preventDefault();
+            
+            const productData = {
+                product_id: parseInt(document.getElementById('editProductId').value),
+                product_name: document.getElementById('editProductName').value,
+                product_description: document.getElementById('editProductDescription').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/product`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(productData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка изменения товара');
+                
+                showMessage('Товар успешно изменен!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editProductModal')).hide();
+                
+                await loadProducts(); // Обновляем allProducts и рендерим
+                await loadProductsWithSuppliers();
+                await loadLeftovers();
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка изменения товара: ' + error.message, 'error');
+            }
+        }
+
+        // Предзаполнение модального окна для изменения поставщика
+        function openEditSupplierModal(supplierId) {
+            const supplier = suppliers.find(s => s.supplier_id === supplierId);
+            if (!supplier) return showMessage('Поставщик не найден.', 'error');
+
+            document.getElementById('editSupplierId').value = supplier.supplier_id;
+            document.getElementById('editSupplierDisplayId').value = supplier.supplier_id;
+            document.getElementById('editSupplierName').value = supplier.supplier_name;
+            document.getElementById('editSupplierEmail').value = supplier.email || '';
+            document.getElementById('editSupplierPhone').value = supplier.phone;
+
+            const editModal = new bootstrap.Modal(document.getElementById('editSupplierModal'));
+            editModal.show();
+        }
+
+        // Изменение поставщика
+        async function editSupplier(event) {
+            event.preventDefault();
+            
+            const supplierData = {
+                supplier_id: parseInt(document.getElementById('editSupplierId').value),
+                supplier_name: document.getElementById('editSupplierName').value,
+                email: document.getElementById('editSupplierEmail').value || null,
+                phone: document.getElementById('editSupplierPhone').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/supplier`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(supplierData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка изменения поставщика');
+                
+                showMessage('Поставщик успешно изменен!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editSupplierModal')).hide();
+                
+                await loadSuppliers();
+                await loadProductsWithSuppliers();
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка изменения поставщика: ' + error.message, 'error');
+            }
+        }
+
+        // Предзаполнение модального окна для изменения склада
+        function openEditStorageModal(storageId) {
+            const storage = storages.find(s => s.storage_id === storageId);
+            if (!storage) return showMessage('Склад не найден.', 'error');
+
+            document.getElementById('editStorageId').value = storage.storage_id;
+            document.getElementById('editStorageDisplayId').value = storage.storage_id;
+            document.getElementById('editStorageName').value = storage.storage_name;
+            document.getElementById('editStorageAddress').value = storage.storage_address || '';
+
+            const editModal = new bootstrap.Modal(document.getElementById('editStorageModal'));
+            editModal.show();
+        }
+
+        // Изменение склада
+        async function editStorage(event) {
+            event.preventDefault();
+            
+            const storageData = {
+                storage_id: parseInt(document.getElementById('editStorageId').value),
+                storage_name: document.getElementById('editStorageName').value,
+                storage_address: document.getElementById('editStorageAddress').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/storage`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(storageData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка изменения склада');
+                
+                showMessage('Склад успешно изменен!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editStorageModal')).hide();
+                
+                await loadStorages();
+                await loadLeftovers();
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка изменения склада: ' + error.message, 'error');
+            }
+        }
+        
+        // Предзаполнение модального окна для изменения остатка
+        function openEditLeftoverModal(productId, storageId, productName, storageName, currentLeftover) {
+            document.getElementById('editLeftoverProductId').value = productId;
+            document.getElementById('editLeftoverStorageId').value = storageId;
+            document.getElementById('leftoverProductName').textContent = productName;
+            document.getElementById('leftoverStorageName').textContent = storageName;
+            document.getElementById('editLeftoverQuantity').value = currentLeftover;
+
+            const editModal = new bootstrap.Modal(document.getElementById('editLeftoverModal'));
+            editModal.show();
+        }
+
+        // Изменение остатка (ОБНОВЛЕНО: добавлена строгая проверка на NaN)
+        async function editLeftover(event) {
+            event.preventDefault();
+            
+            const productIdValue = document.getElementById('editLeftoverProductId').value;
+            const storageIdValue = document.getElementById('editLeftoverStorageId').value;
+            const quantityValue = document.getElementById('editLeftoverQuantity').value;
+
+            const product_id = parseInt(productIdValue);
+            const storage_id = parseInt(storageIdValue);
+            const leftover = parseInt(quantityValue);
+
+            // 1. Проверка, что все поля являются действительными числами
+            if (isNaN(product_id) || isNaN(storage_id) || isNaN(leftover)) {
+                 showMessage('Ошибка: Не удалось распознать ID товара, ID склада или количество. Пожалуйста, убедитесь, что все поля заполнены корректно.', 'error');
+                 return;
+            }
+            
+            // 2. Проверка валидации Pydantic (leftover >= 0)
+            if(leftover < 0) {
+                 showMessage('Остаток не может быть отрицательным.', 'error');
+                 return;
+            }
+
+            const leftoverData = { product_id, storage_id, leftover };
+
+            try {
+                // Используем PUT-эндпоинт для обновления остатка
+                const response = await fetch(`${API_BASE_URL}/purchase`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(leftoverData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка изменения остатка');
+                
+                showMessage('Остаток успешно изменен!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editLeftoverModal')).hide();
+                
+                await loadLeftovers();
+            } catch (error) {
+                showMessage('Ошибка изменения остатка: ' + error.message, 'error');
+            }
+        }
+
+
+        /* --- CRUD ОПЕРАЦИИ (УДАЛЕНИЕ) --- */
+
+        // Удаление товара
+        async function deleteProduct(productId) {
+            if (!confirm(`Вы уверены, что хотите удалить товар с артикулом ${productId}? Это действие нельзя отменить.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/product?id=${productId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Ошибка удаления товара');
+                
+                showMessage('Товар успешно удален!', 'success');
+                await loadProducts(); // Обновляем allProducts и рендерим
+                await loadProductsWithSuppliers();
+                await loadLeftovers();
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка удаления товара: ' + error.message, 'error');
+            }
+        }
+
+        // Удаление поставщика
+        async function deleteSupplier(supplierId) {
+            if (!confirm(`Вы уверены, что хотите удалить поставщика с ID ${supplierId}? Это действие нельзя отменить.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/supplier?id=${supplierId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Ошибка удаления поставщика');
+                
+                showMessage('Поставщик успешно удален!', 'success');
+                await loadSuppliers();
+                await loadProductsWithSuppliers();
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка удаления поставщика: ' + error.message, 'error');
+            }
+        }
+        
+        // Удаление склада
+        async function deleteStorage(storageId) {
+            if (!confirm(`Вы уверены, что хотите удалить склад с ID ${storageId}? Это действие нельзя отменить.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/storage?id=${storageId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Ошибка удаления склада');
+                
+                showMessage('Склад успешно удален!', 'success');
+                await loadStorages();
+                await loadLeftovers();
+                updateDropdowns();
+            } catch (error) {
+                showMessage('Ошибка удаления склада: ' + error.message, 'error');
+            }
+        }
+
+
+        /* --- ОПЕРАЦИИ --- */
+
+        // Добавление поставки
+        async function addSupply(event) {
+            event.preventDefault();
+            
+            const supplyData = {
+                product_id: parseInt(document.getElementById('supplyProduct').value),
+                supplier_id: parseInt(document.getElementById('supplySupplier').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/supply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(supplyData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка добавления поставки');
+                
+                showMessage('Поставка успешно добавлена!', 'success');
+                document.getElementById('addSupplyForm').reset();
+                
+                await loadProductsWithSuppliers();
+            } catch (error) {
+                showMessage('Ошибка добавления поставки: ' + error.message, 'error');
+            }
+        }
+
+        // Добавление закупки
+        async function addPurchase(event) {
+            event.preventDefault();
+            
+            const purchaseData = {
+                product_id: parseInt(document.getElementById('purchaseProduct').value),
+                storage_id: parseInt(document.getElementById('purchaseStorage').value),
+                leftover: parseInt(document.getElementById('purchaseQuantity').value)
+            };
+            
+            if(purchaseData.leftover <= 0) {
+                 showMessage('Количество должно быть больше нуля.', 'error');
+                 return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/purchase`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(purchaseData)
+                });
+
+                if (!response.ok) throw new Error('Ошибка добавления закупки');
+                
+                showMessage('Закупка успешно добавлена!', 'success');
+                document.getElementById('addPurchaseForm').reset();
+                
+                // Обновляем таблицу остатков, если она активна
+                const leftoversTab = document.querySelector('#mainTabs a[href="#leftovers"]');
+                if (leftoversTab.classList.contains('active')) {
+                    await loadLeftovers();
+                }
+            } catch (error) {
+                showMessage('Ошибка добавления закупки: ' + error.message, 'error');
+            }
+        }
+
+        /* --- РЕНДЕРИНГ ТАБЛИЦ --- */
+
+        // Отображение таблицы товаров (с учетом фильтрации)
+        function renderProductsTable(data) {
+            const tbody = document.getElementById('productsTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="4" class="text-center">Нет товаров, соответствующих фильтру.</td></tr>';
+                 return;
+            }
+
+            data.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.product_id}</td>
+                    <td>${product.product_name}</td>
+                    <td>${product.product_description || ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info me-2" onclick="openEditProductModal(${product.product_id})">
+                            Изменить
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.product_id})">
+                            Удалить
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Отображение таблицы поставщиков
+        function renderSuppliersTable() {
+            const tbody = document.getElementById('suppliersTableBody');
+            tbody.innerHTML = '';
+
+            suppliers.forEach(supplier => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${supplier.supplier_id}</td>
+                    <td>${supplier.supplier_name}</td>
+                    <td>${supplier.email || ''}</td>
+                    <td>${supplier.phone}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info me-2" onclick="openEditSupplierModal(${supplier.supplier_id})">
+                            Изменить
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSupplier(${supplier.supplier_id})">
+                            Удалить
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Отображение таблицы складов
+        function renderStoragesTable() {
+            const tbody = document.getElementById('storagesTableBody');
+            tbody.innerHTML = '';
+
+            storages.forEach(storage => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${storage.storage_id}</td>
+                    <td>${storage.storage_name}</td>
+                    <td>${storage.address || ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info me-2" onclick="openEditStorageModal(${storage.storage_id})">
+                            Изменить
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteStorage(${storage.storage_id})">
+                            Удалить
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Отображение таблицы остатков (ОБНОВЛЕНО: теперь передает storage_id)
+        function renderLeftoversTable(leftovers) {
+            const tbody = document.getElementById('leftoversTableBody');
+            tbody.innerHTML = '';
+
+            if (leftovers.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="5" class="text-center">Нет данных об остатках или все позиции в дефиците по вашему фильтру.</td></tr>';
+                 return;
+            }
+
+            leftovers.forEach(item => {
+                // Строка данных для передачи в модальное окно. 
+                // !!! ИСПОЛЬЗУЕМ item.storage_id, который теперь приходит с бэкенда !!!
+                const args = `${item.product_id}, ${item.storage_id}, '${item.product_name.replace(/'/g, "\\'")}', '${item.storage_name.replace(/'/g, "\\'")}', ${item.leftover}`;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.product_id}</td>
+                    <td>${item.product_name}</td>
+                    <td>${item.storage_name}</td>
+                    <td>${item.leftover}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-warning" 
+                                onclick="openEditLeftoverModal(${args})">
+                            Изменить
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Отображение таблицы товаров и поставщиков
+        function renderProductsSuppliersTable(data) {
+            const tbody = document.getElementById('productsSuppliersTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="4" class="text-center">Нет связей между товарами и поставщиками.</td></tr>';
+                 return;
+            }
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.product_name}</td>
+                    <td>${item.supplier_name}</td>
+                    <td>${item.email || ''}</td>
+                    <td>${item.phone}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        /* --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ --- */
+
+        // Обновление выпадающих списков
+        function updateDropdowns() {
+            // Для поставок
+            const supplyProductSelect = document.getElementById('supplyProduct');
+            const supplySupplierSelect = document.getElementById('supplySupplier');
+            
+            supplyProductSelect.innerHTML = '<option value="">Выберите товар</option>';
+            supplySupplierSelect.innerHTML = '<option value="">Выберите поставщика</option>';
+            
+            // Для фильтрации номенклатуры
+            const supplierFilterSelect = document.getElementById('supplierFilterSelect');
+            supplierFilterSelect.innerHTML = '<option value="all">Показать все товары</option>';
+            
+            // Очистка для закупок
+            const purchaseProductSelect = document.getElementById('purchaseProduct');
+            purchaseProductSelect.innerHTML = '<option value="">Выберите товар</option>';
+
+            allProducts.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.product_id;
+                option.textContent = product.product_name;
+                supplyProductSelect.appendChild(option.cloneNode(true));
+                purchaseProductSelect.appendChild(option); 
+            });
+            
+            suppliers.forEach(supplier => {
+                // Для операций
+                let optionSupply = document.createElement('option');
+                optionSupply.value = supplier.supplier_id;
+                optionSupply.textContent = supplier.supplier_name;
+                supplySupplierSelect.appendChild(optionSupply.cloneNode(true));
+
+                // Для фильтрации
+                let optionFilter = document.createElement('option');
+                optionFilter.value = supplier.supplier_id;
+                optionFilter.textContent = supplier.supplier_name;
+                supplierFilterSelect.appendChild(optionFilter);
+            });
+
+            // Для закупок
+            const purchaseStorageSelect = document.getElementById('purchaseStorage');
+            
+            purchaseStorageSelect.innerHTML = '<option value="">Выберите склад</option>';
+            
+            storages.forEach(storage => {
+                const option = document.createElement('option');
+                option.value = storage.storage_id;
+                option.textContent = storage.storage_name;
+                purchaseStorageSelect.appendChild(option);
+            });
+        }
+
+        // Показать сообщение
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+            
+            const alert = document.createElement('div');
+            alert.className = `alert ${alertClass} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Удаляем старые сообщения
+            while(messageArea.children.length > 0) {
+                messageArea.removeChild(messageArea.children[0]);
+            }
+            
+            messageArea.appendChild(alert);
+            
+            // Автоматическое скрытие через 5 секунд
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
