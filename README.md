@@ -28,9 +28,9 @@
 git https://github.com/AlbinaMissarova/Inventory_Management_System.git
 cd <project-directory>
 ```
-2. Запустите приложение с помощью Docker Compose:
+2. Запустите приложение с помощью Docker Compose (в фоновом режиме):
 ```bash
-docker-compose up --build
+docker-compose up --build -d
 ```
 При первом запуске будут созданы все необходимые таблицы. 
 Вся информация из базы данных будет сохраняться и отобажаться при следующих сеансах работы с приложением.
