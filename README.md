@@ -26,7 +26,6 @@
 1. Клонируйте репозиторий:
 ```bash
 git https://github.com/AlbinaMissarova/Inventory_Management_System.git
-cd <project-directory>
 ```
 2. Запустите приложение с помощью Docker Compose (в фоновом режиме):
 ```bash
