@@ -47,8 +47,9 @@ class LeftoversDTO(BaseModel):
     storage_name: str
     leftover: int = Field(ge=0, description="Остаток должен быть не меньше 0.")
 
-class ProductsAndSuppliers(SupplierAddDTO):
+class ProductsAndSuppliers(SupplierDTO):
     product_name: str
+    product_id: int
 
 # поставка - связь поставщиков и продуктов
 class SupplyDTO(BaseModel):

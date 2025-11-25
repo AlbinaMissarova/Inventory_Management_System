@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException, status
 from typing import Annotated
 
 from src.schemas import  SupplierAddDTO, AddMsg, SupplierDTO
@@ -10,8 +10,12 @@ router = APIRouter(prefix="/supplier", tags=["Операции над поста
 async def add_supplier(
         supplier: Annotated[SupplierAddDTO, Body()],
 ) -> AddMsg:
-    supplier_id = await AsyncORM.insert_supplier(supplier)
-    return {"ok": True, "id": supplier_id}
+    try:
+        supplier_id = await AsyncORM.insert_supplier(supplier)
+        return {"ok": True, "id": supplier_id}
+        
+    except HTTPException:
+        raise
     
 @router.delete("", summary="Удалить поставщика")
 async def delete_supplier(
@@ -28,7 +32,12 @@ async def all_suppliers():
 async def put_supplier(
         supplier: Annotated[SupplierDTO, Body()],
 ):
-    await AsyncORM.update_supplier(supplier)
+    try:
+        await AsyncORM.update_supplier(supplier)
+        
+    except HTTPException:
+        raise
+   
 
 @router.get("/with_products", summary="Сводная таблица товаров и поставщиков")
 async def products_by_supplier():

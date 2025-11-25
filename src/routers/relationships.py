@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException, status
 from typing import Annotated
 
 from src.schemas import PurchaseDTO, SupplyDTO
@@ -12,8 +12,11 @@ router = APIRouter(prefix="", tags=["Операции над связями ме
 async def add_product_supplier_relationship(
     new_supply : Annotated[SupplyDTO, Body()]
 ):
-    await AsyncORM.add_supplier_product_rel(new_supply)
-    return {"ok": True}
+    try:
+        await AsyncORM.add_supplier_product_rel(new_supply)
+        return {"ok": True}
+    except HTTPException:
+        raise
 
 @router.delete("/supply", summary="Удалить поставку")
 async def delete_storage(
@@ -26,8 +29,11 @@ async def delete_storage(
 async def add_product_storage_relationship(
     new_purchase: Annotated[PurchaseDTO, Body()]
 ):
-    await AsyncORM.add_storage_product_rel(new_purchase)
-    return {"ok": True}
+    try:
+        await AsyncORM.add_storage_product_rel(new_purchase)
+        return {"ok": True}
+    except HTTPException:
+        raise
 
 @router.delete("/purchase", summary="Удалить закупку")
 async def delete_purchase(

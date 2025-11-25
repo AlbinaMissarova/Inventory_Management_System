@@ -1,6 +1,8 @@
 from typing import Optional
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
+from fastapi import HTTPException, status
 from src.DB.database import Base, async_engine, async_session_factory
 from src.DB.models import ProductOrm, ProductsAndStoragesORM, ProductsAndSuppliersORM, StorageOrm, SupplierOrm
 from src.schemas import LeftoversDTO, ProductAddDTO, ProductDTO, ProductsAndSuppliers, PurchaseDTO, StorageAddDTO, StorageDTO, SupplierAddDTO, SupplierDTO, SupplyDTO
@@ -22,7 +24,6 @@ class AsyncORM:
 
             product = ProductOrm(**product_dict)
             session.add(product)
-            # await session.flush()
             await session.commit()
             await session.refresh(product) 
             return product.product_id
@@ -31,15 +32,31 @@ class AsyncORM:
     @classmethod
     async def insert_supplier(cls, data: SupplierAddDTO) -> int:
         async with async_session_factory() as session:
-            supplier_dict = data.model_dump()
-
-            supplier = SupplierOrm(**supplier_dict)
-            session.add(supplier)
-
-            # await session.flush()
-            await session.commit()
-            await session.refresh(supplier) 
-            return supplier.supplier_id 
+            try:
+                supplier_dict = data.model_dump()
+                supplier = SupplierOrm(**supplier_dict)
+                session.add(supplier)
+                await session.commit()
+                await session.refresh(supplier)
+                return supplier.supplier_id
+                
+            except IntegrityError as e:
+                await session.rollback()
+                
+                # Анализируем текст ошибки для определения конкретного нарушения
+                error_msg = str(e.orig).lower()
+                
+                if "email" in error_msg and "unique" in error_msg:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Поставщик с такой почтой уже есть."
+                    )
+                elif "phone" in error_msg and "unique" in error_msg:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Поставщик с таким номером телефона уже есть."
+                    )
+            
             
     # склада
     @classmethod
@@ -58,19 +75,47 @@ class AsyncORM:
     @classmethod
     async def add_supplier_product_rel(cls, data: SupplyDTO):
         async with async_session_factory() as session:
-            supply_dict = data.model_dump()
-            supply = ProductsAndSuppliersORM(**supply_dict)
-            session.add(supply)
-            await session.commit()
+            try:
+                supply_dict = data.model_dump()
+                supply = ProductsAndSuppliersORM(**supply_dict)
+                session.add(supply)
+                await session.commit()
+                
+            except IntegrityError as e:
+                await session.rollback()
+                error_msg = str(e.orig).lower()
+                
+                if "unique constraint" in error_msg or "duplicate key" in error_msg:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Такая поставка уже существует."
+                    )
 
     # добавление закупки - связь между продуктом и складом
     @classmethod
     async def add_storage_product_rel(cls, data: PurchaseDTO):
         async with async_session_factory() as session:
-            storage_dict = data.model_dump()
-            purchase = ProductsAndStoragesORM(**storage_dict)
-            session.add(purchase)
-            await session.commit()
+            try:
+                storage_dict = data.model_dump()
+                purchase = ProductsAndStoragesORM(**storage_dict)
+                session.add(purchase)
+                await session.commit()
+                
+            except IntegrityError as e:
+                await session.rollback()
+                
+                error_msg = str(e.orig).lower()
+                
+                if "unique constraint" in error_msg or "duplicate key" in error_msg:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Такая закупка уже существует."
+                    )
+                elif "leftover_non_negative" in error_msg or "check constraint" in error_msg:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Количество товара не может быть отрицательным."
+                    )
             
 
     # select запросы - read 
@@ -80,6 +125,7 @@ class AsyncORM:
         async with async_session_factory() as session:        
             query = (
                 select(ProductOrm)
+                .order_by(ProductOrm.product_id.asc())
             )
             res = await session.execute(query)
             result_orm = res.unique().scalars().all() 
@@ -92,6 +138,7 @@ class AsyncORM:
         async with async_session_factory() as session:        
             query = (
                 select(SupplierOrm)
+                .order_by(SupplierOrm.supplier_id.asc())
             )
             res = await session.execute(query)
             result_orm = res.unique().scalars().all() 
@@ -104,6 +151,7 @@ class AsyncORM:
         async with async_session_factory() as session:        
             query = (
                 select(StorageOrm)
+                .order_by(StorageOrm.storage_id.asc())
             )
             res = await session.execute(query)
             result_orm = res.unique().scalars().all() 
@@ -136,6 +184,7 @@ class AsyncORM:
                     ProductsAndStoragesORM.storage_id == StorageOrm.storage_id
                 )
                 .filter(ProductsAndStoragesORM.leftover < num)
+                .order_by(ProductOrm.product_id.asc())
             )
 
             res = await session.execute(query)
@@ -164,7 +213,9 @@ class AsyncORM:
         async with async_session_factory() as session:        
             query = (
                 select(
+                    ProductOrm.product_id,
                     ProductOrm.product_name,
+                    SupplierOrm.supplier_id,
                     SupplierOrm.supplier_name.label("supplier_name"),
                     SupplierOrm.email.label("email"),
                     SupplierOrm.phone.label("phone"),
@@ -177,6 +228,7 @@ class AsyncORM:
                     SupplierOrm, 
                     ProductsAndSuppliersORM.supplier_id == SupplierOrm.supplier_id
                 )
+                .order_by(ProductOrm.product_name.asc())
             )
 
             res = await session.execute(query)
@@ -203,15 +255,33 @@ class AsyncORM:
     @classmethod
     async def update_supplier(cls, data: SupplierDTO):
         async with async_session_factory() as session:
-            supplier_dict = data.model_dump()
-            supplier_updated = SupplierOrm(**supplier_dict)
-            stmt = (
+            try:
+                supplier_dict = data.model_dump()
+                supplier_updated = SupplierOrm(**supplier_dict)
+                stmt = (
                 update(SupplierOrm)
                 .where(SupplierOrm.supplier_id == supplier_updated.supplier_id)
                 .values(supplier_name=supplier_updated.supplier_name, email = supplier_updated.email, phone = supplier_updated.phone)
-            )
-            await session.execute(stmt)
-            await session.commit()
+                )
+                await session.execute(stmt)
+                await session.commit()
+                
+            except IntegrityError as e:
+                await session.rollback()
+                
+                # Анализируем текст ошибки для определения конкретного нарушения
+                error_msg = str(e.orig).lower()
+                
+                if "email" in error_msg and "unique" in error_msg:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Поставщик с такой почтой уже есть."
+                    )
+                elif "phone" in error_msg and "unique" in error_msg:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Поставщик с таким номером телефона уже есть."
+                    )
 
     # склада
     @classmethod
