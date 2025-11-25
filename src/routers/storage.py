@@ -1,6 +1,6 @@
+# Данный файл содержит эндпоинты, относящиеся к работе со складами 
 from fastapi import APIRouter, Body, HTTPException, Query
 from typing import Annotated, Optional
-
 
 from src.schemas import  StorageAddDTO, StorageDTO, AddMsg
 from src.DB.crud import AsyncORM

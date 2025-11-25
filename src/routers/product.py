@@ -1,3 +1,4 @@
+# Данный файл содержит эндпоинты, относящиеся к работе с товарами 
 from fastapi import APIRouter, Body
 from typing import Annotated
 

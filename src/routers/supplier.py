@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Body, HTTPException, status
+# Данный файл содержит эндпоинты, относящиеся к работе с поставщиками 
+from fastapi import APIRouter, Body, HTTPException
 from typing import Annotated
 
 from src.schemas import  SupplierAddDTO, AddMsg, SupplierDTO
@@ -38,7 +39,6 @@ async def put_supplier(
     except HTTPException:
         raise
    
-
 @router.get("/with_products", summary="Сводная таблица товаров и поставщиков")
 async def products_by_supplier():
     res = await AsyncORM.get_products_with_suppliers()

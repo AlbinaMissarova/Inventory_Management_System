@@ -8,12 +8,13 @@ from src.routers import product, storage, supplier, relationships
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup code
-    print("Application starting up...")
+    # При запуске в первй раз будут созданы все таблицы, 
+    # в остальные разы эта строчка не будет иметь никакого эффекта так как таблицы уже будут созданы
+    print("Запуск приложения...")
     await AsyncORM.create_tables()
     yield
     # Shutdown code
-    print("Application shutting down...")
+    print("Выключение приложения...")
 
 app = FastAPI(
     title="Система управления складскими остатками",
@@ -31,12 +32,13 @@ os.makedirs(static_dir, exist_ok=True)
 # Монтируем статические файлы
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# Подключаем роутеры
+# Подключаем роутеры (то есть эндпоинты, которые описаны в них)
 app.include_router(product.router)
 app.include_router(supplier.router)
 app.include_router(storage.router)
 app.include_router(relationships.router)
 
+# страница по умолчанию 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     try:

@@ -5,7 +5,7 @@ from sqlalchemy import CheckConstraint, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.DB.database import Base
 
-# intpk - integer primary key
+# intpk - integer primary key - вводим новый тип данных
 intpk = Annotated[int, mapped_column(primary_key=True)]
 
 # товары

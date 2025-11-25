@@ -1,5 +1,5 @@
-
-from fastapi import APIRouter, Body, HTTPException, status
+# Данный файл содержит эндпоинты, относящиеся к работе со связями между сущностями БД 
+from fastapi import APIRouter, Body, HTTPException
 from typing import Annotated
 
 from src.schemas import PurchaseDTO, SupplyDTO

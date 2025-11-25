@@ -1,3 +1,4 @@
+# Данный файл содержит реализацию всех необходимых запросов в БД
 from typing import Optional
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.orm import selectinload
@@ -7,15 +8,15 @@ from src.DB.database import Base, async_engine, async_session_factory
 from src.DB.models import ProductOrm, ProductsAndStoragesORM, ProductsAndSuppliersORM, StorageOrm, SupplierOrm
 from src.schemas import LeftoversDTO, ProductAddDTO, ProductDTO, ProductsAndSuppliers, PurchaseDTO, StorageAddDTO, StorageDTO, SupplierAddDTO, SupplierDTO, SupplyDTO
 
-
+# взаимодействие с БД в асинхронном режиме
 class AsyncORM:
+    # создание всех таблиц
     @staticmethod
     async def create_tables():
         async with async_engine.begin() as conn:
-            # await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
-    # добавление - create
+    # ===================== CREATE - ФУНКЦИИ ДОБАВЛЕНИЯ =====================
     # товара 
     @classmethod
     async def insert_product(cls, data: ProductAddDTO) -> int:
@@ -25,6 +26,7 @@ class AsyncORM:
             product = ProductOrm(**product_dict)
             session.add(product)
             await session.commit()
+            # для получения присвоенного ID
             await session.refresh(product) 
             return product.product_id
         
@@ -37,6 +39,7 @@ class AsyncORM:
                 supplier = SupplierOrm(**supplier_dict)
                 session.add(supplier)
                 await session.commit()
+                # для получения присвоенного ID
                 await session.refresh(supplier)
                 return supplier.supplier_id
                 
@@ -63,11 +66,10 @@ class AsyncORM:
     async def insert_storage(cls, data: StorageAddDTO) -> int:
         async with async_session_factory() as session:
             storage_dict = data.model_dump()
-
             storage = StorageOrm(**storage_dict)
             session.add(storage)
-            # await session.flush()
             await session.commit()
+            # для получения присвоенного ID
             await session.refresh(storage) 
             return storage.storage_id  
         
@@ -118,13 +120,14 @@ class AsyncORM:
                     )
             
 
-    # select запросы - read 
-    # "Номенклатура" (полный список всех товаров, имеющихся в системе).
+    # ===================== READ - SELECT ЗАПРОСЫ - ПОЛУЧЕНИЕ ИНФОРМАЦИИ =====================
+    # "Номенклатура" (полный список всех товаров, имеющихся в системе)
     @classmethod
     async def get_all_products(cls) -> list[ProductDTO]:
         async with async_session_factory() as session:        
             query = (
                 select(ProductOrm)
+                # сортировка в порядке возрастания артикула
                 .order_by(ProductOrm.product_id.asc())
             )
             res = await session.execute(query)
@@ -132,12 +135,13 @@ class AsyncORM:
             result_dto = [ProductDTO.model_validate(row, from_attributes=True) for row in result_orm]
             return result_dto
 
-    # Реализовать таблицу "Поставщики".
+    # таблица "Поставщики"
     @classmethod
     async def get_all_suppliers(cls) -> list[SupplierDTO]:
         async with async_session_factory() as session:        
             query = (
                 select(SupplierOrm)
+                # сортировка в порядке возрастания ID
                 .order_by(SupplierOrm.supplier_id.asc())
             )
             res = await session.execute(query)
@@ -145,12 +149,13 @@ class AsyncORM:
             result_dto = [SupplierDTO.model_validate(row, from_attributes=True) for row in result_orm]
             return result_dto  
         
-    # Реализовать таблицу "Склады".
+    # Таблица "Склады"
     @classmethod
     async def get_all_storages(cls) -> list[StorageDTO]:
         async with async_session_factory() as session:        
             query = (
                 select(StorageOrm)
+                # сортировка в порядке возрастания ID
                 .order_by(StorageOrm.storage_id.asc())
             )
             res = await session.execute(query)
@@ -158,11 +163,14 @@ class AsyncORM:
             result_dto = [StorageDTO.model_validate(row, from_attributes=True) for row in result_orm]
             return result_dto  
 
-    # Реализовать главную сводную таблицу "Остатки на складах". Таблица должна выводить данные в формате: "Артикул", "Название Товара", "Название Склада", "Текущий остаток" (в шт.)          
+    # Реализовать главную сводную таблицу "Остатки на складах". Таблица должна выводить данные в формате: 
+    # "Артикул", "Название Товара", "Название Склада", "Текущий остаток" (в шт.)          
     # Реализовать фильтр "Товары в дефиците" (показать все позиции, остаток которых на любом из складов меньше N единиц).
     @classmethod
     async def get_leftovers(cls, num: Optional[int] = None) -> list[LeftoversDTO]:
         async with async_session_factory() as session: 
+            # если не получили ограничение на количество остатков -> отображаем все товары на складах
+            # иначе -> выводим товары, остатки которых строго меньше ограничения
             if num == None:
                 stmt = func.max(ProductsAndStoragesORM.leftover)
                 res = await session.execute(stmt)
@@ -203,6 +211,7 @@ class AsyncORM:
             )
             res = await session.execute(query)
             result_orm = res.unique().scalars().one() 
+            # из всех атрибутов поставщика выбираем только список поставляемых им товаров
             result_dto = [ProductDTO.model_validate(product, from_attributes=True) for product in result_orm.supplied_products]
             return result_dto
     
@@ -236,7 +245,7 @@ class AsyncORM:
             result_dto = [ProductsAndSuppliers.model_validate(row) for row in result_rows]
             return result_dto 
 
-    # изменение - update - 3
+    # ===================== UPDATE - ИЗМЕНЕНИЕ ЗАПИСЕЙ В БД =====================
     # продукта
     @classmethod
     async def update_product(cls, data: ProductDTO):
@@ -297,7 +306,7 @@ class AsyncORM:
             await session.execute(stmt)
             await session.commit()
 
-    # закупки
+    # остатка на складе
     @classmethod
     async def update_purchase(cls, data: PurchaseDTO):
         async with async_session_factory() as session:
@@ -310,8 +319,10 @@ class AsyncORM:
             )
             await session.execute(stmt)
             await session.commit()
+
+    # изменять поставку нельзя, так как с точки зрения реальной предметной области нужно удалить ненужную поставку и добавить нужную
             
-    # удаление - delete
+    # ===================== DELETE - УДАЛЕНИЕ =====================
     # товара 
     @classmethod
     async def delete_product(cls, product_id: int):
