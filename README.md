@@ -30,7 +30,7 @@ cd <project-directory>
 ```
 2. Запустите приложение с помощью Docker Compose (в фоновом режиме):
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
 При первом запуске будут созданы все необходимые таблицы. 
 Вся информация из базы данных будет сохраняться и отобажаться при следующих сеансах работы с приложением.
@@ -39,11 +39,11 @@ docker-compose up --build -d
 4. Документация API доступна по адресу: http://localhost:8000/docs
 5. Остановка приложения 
 ```bash
-docker-compose down
+docker compose down
 ```
 6. Для полной очистки с удалением всей сохраненной информации:
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ## Структура репозитория и назначение файлов
